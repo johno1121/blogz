@@ -133,46 +133,34 @@ def blog_listings():
 @app.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
-        username_err = ""
-        password_err = ""
-        verify_err = ""
         username = request.form['username']
         password = request.form['password']
         verify = request.form['verify']
-        
-        if len(username) < 3:
-            username_err = 'Username not valid'
-            username = ''
-            flash(username_err)
-        
-        if len(password) < 3:
-            password_err = 'Password not valid'
-            password = ''
-            flash(password_err)
 
-        if not username or not password or not verify:
-            flash('You left a text box blank!')
-            return redirect('/signup')
+        # validate user's data
+        if len(username) < 3 or len(username) > 20 or " " in username:
+            flash('Not a valid username', 'error')
 
-        if password != verify:
-            verify_err = 'Password does not match'
-            verify = ''
-            flash(verify_err)   
+        elif len(password) < 3 or len(password) > 20 or " " in password:
+            flash('Not a valid password', 'error')
 
-        if not username_err and not password_err and not verify_err:
-            return render_template('login.html', username=username)   
-        
-        existing_user = User.query.filter_by(username=username).first()
-        
-        if not existing_user:
-            new_user = User(username, password)
-            db.session.add(new_user)
-            db.session.commit()
-            session['username'] = username
-            return redirect('/')
+        elif password != verify:
+            flash('Passwords do not match', 'error')
+
         else:
-            flash('That username already exists!')
-            return redirect('/signup')
+            # check that user does not exist
+            existing_user = User.query.filter_by(username=username).first()
+
+            if existing_user:
+                flash('User already exists', 'error')
+
+            else:
+                # create user
+                new_user = User(username, password)
+                db.session.add(new_user)
+                db.session.commit()
+                session['username'] = username
+                return redirect('/newpost')
 
     return render_template('signup.html')
 
